@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results - Slope Stability</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 30px 0;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+        .result-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .result-value {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .result-label {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        .badge-compliant {
+            background-color: #10b981;
+            font-size: 1rem;
+            padding: 10px 20px;
+        }
+        .badge-non-compliant {
+            background-color: #ef4444;
+            font-size: 1rem;
+            padding: 10px 20px;
+        }
+        .table-responsive {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .btn-export {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+        }
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+        .btn-new {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container main-container">
+        <div class="text-center mb-4">
+            <h1 class="text-white mb-2">📊 Analysis Results</h1>
+            <p class="text-white-50">Bishop Simplified Method - Slope Stability Analysis</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <h5>❌ Error</h5>
+            {{ error }}
+            <hr>
+            <a href="{% url 'upload' %}" class="btn btn-outline-danger">← Back to Upload</a>
+        </div>
+        {% else %}
+
+        <!-- Main Results Summary -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="result-card">
+                    <div class="result-label">Optimal Height</div>
+                    <div class="result-value">{{ optimal_height }}</div>
+                    <div class="result-label">meters</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="result-card">
+                    <div class="result-label">Optimal Angle</div>
+                    <div class="result-value">{{ optimal_angle }}°</div>
+                    <div class="result-label">degrees</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="result-card">
+                    <div class="result-label">Safety Factor</div>
+                    <div class="result-value">{{ safety_factor }}</div>
+                    <div class="result-label">
+                        {% if safety_factor >= target_sf %}
+                        <span class="badge badge-compliant">✓ {{ kepmen_compliance }}</span>
+                        {% else %}
+                        <span class="badge badge-non-compliant">✗ {{ kepmen_compliance }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Analysis Section -->
+        {% if has_ai_analysis %}
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <h4 class="mb-0">🤖 AI-Powered Analysis</h4>
+            </div>
+            <div class="card-body">
+                {% if ai_analysis.executive_summary %}
+                <div class="alert alert-info">
+                    <h5>📋 Executive Summary</h5>
+                    <p style="white-space: pre-wrap;">{{ ai_analysis.executive_summary }}</p>
+                </div>
+                {% endif %}
+
+                <div class="row">
+                    {% if ai_analysis.cost_estimation %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">💰 Cost Estimation</h6>
+                            </div>
+                            <div class="card-body">
+                                <pre style="white-space: pre-wrap; font-size: 0.9rem;">{{ ai_analysis.cost_estimation }}</pre>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if ai_analysis.safety_recommendations %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">⚠️ Safety Recommendations</h6>
+                            </div>
+                            <div class="card-body">
+                                <pre style="white-space: pre-wrap; font-size: 0.9rem;">{{ ai_analysis.safety_recommendations }}</pre>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if ai_analysis.real_world_comparison %}
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">🌍 Real-World Comparison</h6>
+                    </div>
+                    <div class="card-body">
+                        <pre style="white-space: pre-wrap; font-size: 0.9rem;">{{ ai_analysis.real_world_comparison }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if ai_analysis.engineering_insights %}
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">🔬 Engineering Insights</h6>
+                    </div>
+                    <div class="card-body">
+                        <pre style="white-space: pre-wrap; font-size: 0.9rem;">{{ ai_analysis.engineering_insights }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if ai_analysis.implementation_plan %}
+                <div class="card mb-3">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0">📝 Implementation Plan</h6>
+                    </div>
+                    <div class="card-body">
+                        <pre style="white-space: pre-wrap; font-size: 0.9rem;">{{ ai_analysis.implementation_plan }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="alert alert-light mt-3">
+                    <small class="text-muted">
+                        <strong>Note:</strong> AI analysis generated by Google Gemini. 
+                        Please verify recommendations with licensed engineers and local regulations.
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% elif ai_error %}
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h4 class="mb-0">⚠️ AI Analysis Unavailable</h4>
+            </div>
+            <div class="card-body">
+                <p>AI-powered analysis could not be generated: {{ ai_error }}</p>
+                <p class="mb-0">
+                    <small>To enable AI analysis, please configure your Gemini API key.</small>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Critical Circle Information -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">🎯 Critical Slip Circle Parameters</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table">
+                            <tr>
+                                <th>Circle Center X:</th>
+                                <td>{{ circle_center_x }} m</td>
+                            </tr>
+                            <tr>
+                                <th>Circle Center Y:</th>
+                                <td>{{ circle_center_y }} m</td>
+                            </tr>
+                            <tr>
+                                <th>Circle Radius:</th>
+                                <td>{{ circle_radius }} m</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table">
+                            <tr>
+                                <th>Target Safety Factor:</th>
+                                <td>{{ target_sf }}</td>
+                            </tr>
+                            <tr>
+                                <th>Number of Slices:</th>
+                                <td>{{ num_slices }}</td>
+                            </tr>
+                            <tr>
+                                <th>KEPMEN ESDM Status:</th>
+                                <td>
+                                    {% if safety_factor >= target_sf %}
+                                    <span class="badge bg-success">COMPLIANT</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">NON-COMPLIANT</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slice-by-Slice Details -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">📋 Detailed Slice-by-Slice Calculations</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Slice No.</th>
+                                <th>X Position (m)</th>
+                                <th>Width (m)</th>
+                                <th>Height (m)</th>
+                                <th>Weight (kN)</th>
+                                <th>Cohesion (kPa)</th>
+                                <th>Friction Angle (°)</th>
+                                <th>Base Angle (°)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for slice in slices_data %}
+                            <tr>
+                                <td>{{ slice.slice_no }}</td>
+                                <td>{{ slice.x_position }}</td>
+                                <td>{{ slice.width }}</td>
+                                <td>{{ slice.height }}</td>
+                                <td>{{ slice.weight }}</td>
+                                <td>{{ slice.cohesion }}</td>
+                                <td>{{ slice.friction_angle }}</td>
+                                <td>{{ slice.base_angle }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- KEPMEN ESDM Reference -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">📜 KEPMEN ESDM No. 1827/2018 Reference</h4>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Condition</th>
+                            <th>Minimum Safety Factor</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Overall Slope (Static)</td>
+                            <td>1.3 - 1.5</td>
+                            <td>
+                                {% if safety_factor >= 1.3 %}
+                                <span class="badge bg-success">✓ PASS</span>
+                                {% else %}
+                                <span class="badge bg-danger">✗ FAIL</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Single Bench</td>
+                            <td>≥ 1.2</td>
+                            <td><span class="badge bg-secondary">N/A</span></td>
+                        </tr>
+                        <tr>
+                            <td>Dynamic/Seismic</td>
+                            <td>≥ 1.1</td>
+                            <td><span class="badge bg-secondary">N/A</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center mb-4">
+            <a href="{% url 'export' %}" class="btn btn-export btn-lg me-3">
+                📥 Export Results to Excel
+            </a>
+            <a href="{% url 'upload' %}" class="btn btn-new btn-lg">
+                🔄 New Analysis
+            </a>
+        </div>
+
+        {% endif %}
+
+        <div class="text-center mt-4">
+            <p class="text-white-50">Results generated using Bishop Simplified Method</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
